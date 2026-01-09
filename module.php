@@ -4,10 +4,11 @@
  *
  * This module is loaded by the TIMU Core Module Loader.
  * It is NOT a WordPress plugin, but an extension of Core.
- * Depends on: Media Hub
+ * Depends on: Media Hub (provided by plugin-media-support-thisismyurl)
  *
  * @package TIMU_CORE
  * @subpackage TIMU_VAULT_SPOKE
+ * @requires plugin-media-support-thisismyurl
  */
 
 namespace TIMU\VaultSupport;
@@ -31,8 +32,9 @@ define( 'TIMU_VAULT_BASENAME', plugin_basename( __FILE__ ) );
  * @return void
  */
 function init(): void {
-	// Bail if media_hub feature is not available.
-	if ( ! function_exists( '\TIMU\CoreSupport\has_timu_feature' ) || ! \TIMU\CoreSupport\has_timu_feature( 'media_hub' ) ) {
+	// Check if Media Support plugin (plugin-media-support-thisismyurl) is loaded.
+	// This plugin provides the media_hub feature that Vault Support depends on.
+	if ( ! function_exists( '\TIMU\MediaSupport\init' ) && ( ! function_exists( '\TIMU\CoreSupport\has_timu_feature' ) || ! \TIMU\CoreSupport\has_timu_feature( 'media_hub' ) ) ) {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\dependency_notice' );
 		return;
 	}
@@ -84,7 +86,7 @@ function dependency_notice(): void {
 					/* translators: 1: Plugin name, 2: Required plugin name with link */
 					__( '<strong>%1$s</strong> requires %2$s to be installed and activated.', 'vault-support-thisismyurl' ),
 					'Vault Support',
-					'<a href="https://github.com/thisismyurl/media-support-thisismyurl">Media Support</a>'
+					'<a href="https://github.com/thisismyurl/plugin-media-support-thisismyurl">Media Support (plugin-media-support-thisismyurl)</a>'
 				)
 			);
 			?>
