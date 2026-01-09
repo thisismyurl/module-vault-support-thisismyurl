@@ -1,24 +1,14 @@
 <?php
 /**
- * Author:              Christopher Ross
- * Author URI:          https://thisismyurl.com/?source=vault-support-thisismyurl
- * Plugin Name:         Vault Support
- * Plugin URI:          https://thisismyurl.com/vault-support-thisismyurl/?source=vault-support-thisismyurl
- * Donate link:         https://thisismyurl.com/vault-support-thisismyurl/#register?source=vault-support-thisismyurl
- * * Description:         Vault System for the thisismyurl.com Shared Code Suite. Secure original storage, encryption, journaling, rollback engine, and cloud offload for media files.
- * Tags:                vault, backup, encryption, security, media, storage, journaling, rollback, cloud
- * * Version:             1.2601.0819
- * Requires at least:   6.4
- * Requires PHP:        8.2
- * Requires Plugins:    media-support-thisismyurl
- * * Update URI:          https://github.com/thisismyurl/vault-support-thisismyurl
- * GitHub Plugin URI:   https://github.com/thisismyurl/vault-support-thisismyurl
- * Primary Branch:      main
- * Text Domain:         vault-support-thisismyurl
- * * License:             GPL2
- * License URI:         https://www.gnu.org/licenses/gpl-2.0.html
- * * @package TIMU_VAULT_SUPPORT
- * */
+ * Vault Spoke Module
+ *
+ * This module is loaded by the TIMU Core Module Loader.
+ * It is NOT a WordPress plugin, but an extension of Core.
+ * Depends on: Media Hub
+ *
+ * @package TIMU_CORE
+ * @subpackage TIMU_VAULT_SPOKE
+ */
 
 namespace TIMU\VaultSupport;
 
@@ -36,45 +26,24 @@ define( 'TIMU_VAULT_URL', plugin_dir_url( __FILE__ ) );
 define( 'TIMU_VAULT_BASENAME', plugin_basename( __FILE__ ) );
 
 /**
- * Note: The Vault class is loaded from includes/class-timu-vault.php and aliased for legacy Core namespace compatibility.
- */
-
-/**
- * Check dependencies before activation.
- *
- * @return void
- */
-function check_dependencies(): void {
-	if ( ! class_exists( 'TIMU\\MediaSupport\\Media_Processor' ) ) {
-		deactivate_plugins( TIMU_VAULT_BASENAME );
-		wp_die(
-			esc_html__( 'Vault Support requires Media Support to be installed and activated.', 'vault-support-thisismyurl' ),
-			esc_html__( 'Plugin Dependency Error', 'vault-support-thisismyurl' ),
-			array( 'back_link' => true )
-		);
-	}
-}
-register_activation_hook( __FILE__, __NAMESPACE__ . '\\check_dependencies' );
-
-/**
  * Initialize Vault Support plugin.
  *
  * @return void
  */
 function init(): void {
-	// Bail if Media Support is not active.
-	if ( ! class_exists( 'TIMU\\MediaSupport\\Media_Processor' ) ) {
+	// Bail if media_hub feature is not available.
+	if ( ! function_exists( '\TIMU\CoreSupport\has_timu_feature' ) || ! \TIMU\CoreSupport\has_timu_feature( 'media_hub' ) ) {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\dependency_notice' );
 		return;
 	}
 
-	// Register this plugin as a Hub with Core Support.
+	// Register this plugin as a Spoke (not Hub) with Core Support.
 	do_action(
 		'timu_register_module',
 		array(
 			'slug'         => 'vault-support-thisismyurl',
 			'name'         => __( 'Vault Support', 'vault-support-thisismyurl' ),
-			'type'         => 'hub',
+			'type'         => 'spoke',
 			'suite'        => 'media',
 			'version'      => TIMU_VAULT_VERSION,
 			'description'  => __( 'Secure original storage with encryption, journaling, rollback engine, and cloud offload.', 'vault-support-thisismyurl' ),
@@ -85,7 +54,7 @@ function init(): void {
 		)
 	);
 
-	// Load Vault class from this plugin and initialize.
+	// Load Vault class from vault-support namespace.
 	if ( ! class_exists( '\\TIMU\\VaultSupport\\TIMU_Vault' ) && file_exists( TIMU_VAULT_PATH . 'includes/class-timu-vault.php' ) ) {
 		require_once TIMU_VAULT_PATH . 'includes/class-timu-vault.php';
 	}
@@ -98,7 +67,7 @@ function init(): void {
 	add_action( 'admin_menu', __NAMESPACE__ . '\\register_admin_menu' );
 	add_action( 'network_admin_menu', __NAMESPACE__ . '\\register_network_admin_menu' );
 }
-add_action( 'plugins_loaded', __NAMESPACE__ . '\\init', 5 );
+add_action( 'plugins_loaded', __NAMESPACE__ . '\\init', 15 );
 
 /**
  * Display dependency notice if Media Support is missing.
@@ -170,7 +139,6 @@ function register_network_admin_menu(): void {
  * @return void
  */
 function render_settings_page(): void {
-	// Settings view will be copied from core-support/includes/views/settings.php
 	echo '<div class="wrap"><h1>' . esc_html__( 'Vault Settings', 'vault-support-thisismyurl' ) . '</h1>';
 	echo '<p>' . esc_html__( 'Vault settings UI will be implemented here.', 'vault-support-thisismyurl' ) . '</p>';
 	echo '</div>';

@@ -2,12 +2,12 @@
 /**
  * Vault service for secure storage of originals.
  *
- * @package TIMU_CORE_SUPPORT
+ * @package TIMU_VAULT_SUPPORT
  */
 
 declare(strict_types=1);
 
-namespace TIMU\CoreSupport;
+namespace TIMU\VaultSupport;
 
 use ZipArchive;
 
@@ -1399,13 +1399,13 @@ class TIMU_Vault {
 			$settings = array_merge( $settings, $site );
 		}
 
-		$settings['mode']         = self::resolve_mode( (string) ( $settings['mode'] ?? 'raw' ) );
-		$settings['download_ttl'] = max( 60, (int) ( $settings['download_ttl'] ?? 600 ) );
-		$settings['compression']  = in_array( strtolower( (string) ( $settings['compression'] ?? 'store' ) ), array( 'store', 'deflate' ), true ) ? strtolower( (string) $settings['compression'] ) : 'store';
-		$settings['encrypt']      = ! empty( $settings['encrypt'] );
-		$settings['max_size_mb']  = max( 0, (int) ( $settings['max_size_mb'] ?? 0 ) );
-		$settings['alert_email']  = sanitize_email( (string) ( $settings['alert_email'] ?? '' ) );
-		$settings['mirror_logs']  = ! empty( $settings['mirror_logs'] );
+		$settings['mode']                 = self::resolve_mode( (string) ( $settings['mode'] ?? 'raw' ) );
+		$settings['download_ttl']         = max( 60, (int) ( $settings['download_ttl'] ?? 600 ) );
+		$settings['compression']          = in_array( strtolower( (string) ( $settings['compression'] ?? 'store' ) ), array( 'store', 'deflate' ), true ) ? strtolower( (string) $settings['compression'] ) : 'store';
+		$settings['encrypt']              = ! empty( $settings['encrypt'] );
+		$settings['max_size_mb']          = max( 0, (int) ( $settings['max_size_mb'] ?? 0 ) );
+		$settings['alert_email']          = sanitize_email( (string) ( $settings['alert_email'] ?? '' ) );
+		$settings['mirror_logs']          = ! empty( $settings['mirror_logs'] );
 		$settings['offload_enabled']      = ! empty( $settings['offload_enabled'] );
 		$settings['gdrive_client_id']     = (string) ( $settings['gdrive_client_id'] ?? '' );
 		$settings['gdrive_client_secret'] = (string) ( $settings['gdrive_client_secret'] ?? '' );
@@ -1900,13 +1900,24 @@ class TIMU_Vault {
 	 * @param int    $offset Offset for pagination.
 	 * @param int    $limit Limit per page.
 	 * @param string $level_filter Optional level filter (error|warning|info).
+	 * @param string $search_query Optional search query (matches file name or attachment ID).
 	 * @return array Array of log entries.
 	 */
-	public static function get_logs( int $offset = 0, int $limit = 50, string $level_filter = '' ): array {
+	public static function get_logs( int $offset = 0, int $limit = 50, string $level_filter = '', string $search_query = '' ): array {
 		$logs = (array) get_option( self::LOG_OPTION, array() );
 
 		if ( ! empty( $level_filter ) ) {
 			$logs = array_filter( $logs, fn( $entry ) => ( $entry['level'] ?? '' ) === $level_filter );
+		}
+
+		if ( ! empty( $search_query ) ) {
+			$logs = array_filter(
+				$logs,
+				fn( $entry ) =>
+					stripos( (string) ( $entry['reason'] ?? '' ), $search_query ) !== false
+					|| stripos( (string) ( $entry['operation'] ?? '' ), $search_query ) !== false
+					|| stripos( (string) ( $entry['attachment_id'] ?? '' ), $search_query ) !== false
+			);
 		}
 
 		// Re-index after filter.
@@ -1916,16 +1927,27 @@ class TIMU_Vault {
 	}
 
 	/**
-	 * Get total count of logs with optional level filter.
+	 * Get total count of logs with optional level filter and search query.
 	 *
 	 * @param string $level_filter Optional level filter.
+	 * @param string $search_query Optional search query.
 	 * @return int
 	 */
-	public static function get_log_count( string $level_filter = '' ): int {
+	public static function get_log_count( string $level_filter = '', string $search_query = '' ): int {
 		$logs = (array) get_option( self::LOG_OPTION, array() );
 
 		if ( ! empty( $level_filter ) ) {
 			$logs = array_filter( $logs, fn( $entry ) => ( $entry['level'] ?? '' ) === $level_filter );
+		}
+
+		if ( ! empty( $search_query ) ) {
+			$logs = array_filter(
+				$logs,
+				fn( $entry ) =>
+					stripos( (string) ( $entry['reason'] ?? '' ), $search_query ) !== false
+					|| stripos( (string) ( $entry['operation'] ?? '' ), $search_query ) !== false
+					|| stripos( (string) ( $entry['attachment_id'] ?? '' ), $search_query ) !== false
+			);
 		}
 
 		return count( $logs );
@@ -2075,12 +2097,12 @@ class TIMU_Vault {
 			exit;
 		}
 
-		$limit_arg       = isset( $_GET['limit'] ) ? absint( $_GET['limit'] ) : 0;
-		$op_filter       = isset( $_GET['op'] ) ? sanitize_key( wp_unslash( $_GET['op'] ) ) : '';
-		$attachment_arg  = isset( $_GET['attachment_id'] ) ? absint( $_GET['attachment_id'] ) : 0;
-		$args            = array();
-		$args['limit']   = $limit_arg > 0 ? $limit_arg : null;
-		$args['op']      = ! empty( $op_filter ) ? $op_filter : null;
+		$limit_arg             = isset( $_GET['limit'] ) ? absint( $_GET['limit'] ) : 0;
+		$op_filter             = isset( $_GET['op'] ) ? sanitize_key( wp_unslash( $_GET['op'] ) ) : '';
+		$attachment_arg        = isset( $_GET['attachment_id'] ) ? absint( $_GET['attachment_id'] ) : 0;
+		$args                  = array();
+		$args['limit']         = $limit_arg > 0 ? $limit_arg : null;
+		$args['op']            = ! empty( $op_filter ) ? $op_filter : null;
 		$args['attachment_id'] = $attachment_arg > 0 ? $attachment_arg : null;
 
 		$ledger = self::get_global_ledger(
@@ -2746,7 +2768,7 @@ class TIMU_Vault {
 		}
 
 		// Check if request URI matches vault directory pattern.
-		$vault_path_pattern = '/' . preg_quote( $vault_dirname, '/' ) . '\\/';
+		$vault_path_pattern = '/' . preg_quote( $vault_dirname, '/' ) . '\//';
 		if ( ! preg_match( $vault_path_pattern, $request_uri ) ) {
 			return;
 		}
@@ -3165,8 +3187,8 @@ class TIMU_Vault {
 	 * @return void
 	 */
 	private static function mirror_log_entry_to_disk( array $entry ): void {
-		$dir = self::ensure_vault_logs_dir();
-		$fn  = trailingslashit( $dir ) . 'events-' . gmdate( 'Ymd' ) . '.csv';
+		$dir  = self::ensure_vault_logs_dir();
+		$fn   = trailingslashit( $dir ) . 'events-' . gmdate( 'Ymd' ) . '.csv';
 		$line = array(
 			$entry['timestamp'] ?? '',
 			$entry['level'] ?? '',
@@ -3174,7 +3196,7 @@ class TIMU_Vault {
 			$entry['reason'] ?? '',
 			$entry['operation'] ?? '',
 		);
-		$fh = fopen( $fn, 'a' );
+		$fh   = fopen( $fn, 'a' );
 		if ( false !== $fh ) {
 			fputcsv( $fh, $line );
 			fclose( $fh );
@@ -3188,8 +3210,8 @@ class TIMU_Vault {
 	 * @return void
 	 */
 	private static function mirror_ledger_entry_to_disk( array $entry ): void {
-		$dir = self::ensure_vault_logs_dir();
-		$fn  = trailingslashit( $dir ) . 'ledger-' . gmdate( 'Ym' ) . '.csv';
+		$dir  = self::ensure_vault_logs_dir();
+		$fn   = trailingslashit( $dir ) . 'ledger-' . gmdate( 'Ym' ) . '.csv';
 		$line = array(
 			$entry['ts'] ?? '',
 			(string) ( $entry['site_id'] ?? '' ),
@@ -3198,7 +3220,7 @@ class TIMU_Vault {
 			$entry['op'] ?? '',
 			isset( $entry['success'] ) && $entry['success'] ? '1' : '0',
 		);
-		$fh = fopen( $fn, 'a' );
+		$fh   = fopen( $fn, 'a' );
 		if ( false !== $fh ) {
 			fputcsv( $fh, $line );
 			fclose( $fh );
@@ -3235,8 +3257,8 @@ class TIMU_Vault {
 	 * @return void
 	 */
 	public static function cron_check_vault_size(): void {
-		$settings   = self::get_settings();
-		$max_mb     = (int) ( $settings['max_size_mb'] ?? 0 );
+		$settings = self::get_settings();
+		$max_mb   = (int) ( $settings['max_size_mb'] ?? 0 );
 		if ( $max_mb <= 0 ) {
 			return;
 		}
@@ -3254,7 +3276,7 @@ class TIMU_Vault {
 		$to   = ! empty( $settings['alert_email'] ) ? $settings['alert_email'] : get_option( 'admin_email' );
 		$site = wp_parse_url( home_url(), PHP_URL_HOST );
 		$subj = sprintf( 'TIMU Vault size alert on %s', (string) $site );
-		$body = sprintf( "Vault size is %d MB, exceeding the configured limit of %d MB.", $size_mb, $max_mb );
+		$body = sprintf( 'Vault size is %d MB, exceeding the configured limit of %d MB.', $size_mb, $max_mb );
 		wp_mail( $to, $subj, $body );
 		update_option( self::SIZE_LAST_ALERT_OPTION, time(), false );
 	}
@@ -3379,8 +3401,8 @@ class TIMU_Vault {
 			exit;
 		}
 
-		$folder_name = isset( $_POST['timu_gdrive_folder'] ) ? sanitize_text_field( wp_unslash( $_POST['timu_gdrive_folder'] ) ) : 'TIMU Vault';
-		$count       = isset( $_POST['timu_gdrive_count'] ) ? max( 1, (int) $_POST['timu_gdrive_count'] ) : 10;
+		$folder_name  = isset( $_POST['timu_gdrive_folder'] ) ? sanitize_text_field( wp_unslash( $_POST['timu_gdrive_folder'] ) ) : 'TIMU Vault';
+		$count        = isset( $_POST['timu_gdrive_count'] ) ? max( 1, (int) $_POST['timu_gdrive_count'] ) : 10;
 		$delete_local = ! empty( $_POST['timu_gdrive_delete_local'] );
 
 		$token = self::gdrive_get_token();
@@ -3396,7 +3418,8 @@ class TIMU_Vault {
 		}
 
 		$files = self::list_oldest_vault_files( $count );
-		$ok = 0; $fail = 0;
+		$ok    = 0;
+		$fail  = 0;
 		foreach ( $files as $f ) {
 			if ( self::gdrive_upload_file( $folder_id, $f['path'], $f['name'] ) ) {
 				++$ok;
@@ -3411,8 +3434,8 @@ class TIMU_Vault {
 		$redirect = add_query_arg(
 			array(
 				'timu_gdrive_offload' => '1',
-				'ok' => $ok,
-				'fail' => $fail,
+				'ok'                  => $ok,
+				'fail'                => $fail,
 			),
 			wp_get_referer() ?: admin_url()
 		);
@@ -3442,8 +3465,8 @@ class TIMU_Vault {
 
 	private static function gdrive_save_token( array $data ): void {
 		$data['created_at'] = time();
-		$plain = wp_json_encode( $data );
-		$blob  = self::encrypt_string( (string) $plain );
+		$plain              = wp_json_encode( $data );
+		$blob               = self::encrypt_string( (string) $plain );
 		update_option( self::GDRIVE_TOKEN_OPTION, $blob, false );
 	}
 
@@ -3504,8 +3527,8 @@ class TIMU_Vault {
 			return $cached;
 		}
 		// Search for folder by name.
-		$q   = sprintf( "mimeType='application/vnd.google-apps.folder' and name='%s' and trashed=false", str_replace( "'", "\'", $name ) );
-		$url = 'https://www.googleapis.com/drive/v3/files?q=' . rawurlencode( $q ) . '&fields=files(id,name)&spaces=drive';
+		$q    = sprintf( "mimeType='application/vnd.google-apps.folder' and name='%s' and trashed=false", str_replace( "'", "\'", $name ) );
+		$url  = 'https://www.googleapis.com/drive/v3/files?q=' . rawurlencode( $q ) . '&fields=files(id,name)&spaces=drive';
 		$resp = self::gdrive_api( 'GET', $url, array( 'Authorization' => 'Bearer ' . $token['access_token'] ) );
 		if ( ! is_wp_error( $resp ) ) {
 			$list = json_decode( (string) wp_remote_retrieve_body( $resp ), true );
@@ -3515,7 +3538,10 @@ class TIMU_Vault {
 			}
 		}
 		// Create folder.
-		$meta = array( 'name' => $name, 'mimeType' => 'application/vnd.google-apps.folder' );
+		$meta = array(
+			'name'     => $name,
+			'mimeType' => 'application/vnd.google-apps.folder',
+		);
 		$resp = self::gdrive_api(
 			'POST',
 			'https://www.googleapis.com/drive/v3/files',
@@ -3560,15 +3586,18 @@ class TIMU_Vault {
 		if ( empty( $token['access_token'] ) ) {
 			return false;
 		}
-		$meta = array( 'name' => $name, 'parents' => array( $folder_id ) );
-		$boundary = wp_generate_password( 24, false, false );
-		$delimiter = '-------------' . $boundary;
-		$eol = "\r\n";
+		$meta          = array(
+			'name'    => $name,
+			'parents' => array( $folder_id ),
+		);
+		$boundary      = wp_generate_password( 24, false, false );
+		$delimiter     = '-------------' . $boundary;
+		$eol           = "\r\n";
 		$file_contents = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_get_contents
 		if ( false === $file_contents ) {
 			return false;
 		}
-		$body = '--' . $delimiter . $eol;
+		$body  = '--' . $delimiter . $eol;
 		$body .= 'Content-Type: application/json; charset=UTF-8' . $eol . $eol;
 		$body .= wp_json_encode( $meta ) . $eol;
 		$body .= '--' . $delimiter . $eol;
@@ -3602,9 +3631,9 @@ class TIMU_Vault {
 	}
 
 	private static function encrypt_string( string $plain ): string {
-		$iv = random_bytes( 12 );
-		$key = self::derive_key();
-		$tag = '';
+		$iv     = random_bytes( 12 );
+		$key    = self::derive_key();
+		$tag    = '';
 		$cipher = openssl_encrypt( $plain, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag );
 		return base64_encode( $iv . $tag . (string) $cipher );
 	}
@@ -3614,10 +3643,10 @@ class TIMU_Vault {
 		if ( false === $data || strlen( $data ) < 28 ) {
 			return '';
 		}
-		$iv   = substr( $data, 0, 12 );
-		$tag  = substr( $data, 12, 16 );
-		$ct   = substr( $data, 28 );
-		$key  = self::derive_key();
+		$iv    = substr( $data, 0, 12 );
+		$tag   = substr( $data, 12, 16 );
+		$ct    = substr( $data, 28 );
+		$key   = self::derive_key();
 		$plain = openssl_decrypt( $ct, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag );
 		return (string) $plain;
 	}
@@ -4027,7 +4056,7 @@ class TIMU_Vault {
 			);
 		}
 
-		$ops = (array) $journal['operations'];
+		$ops    = (array) $journal['operations'];
 		$latest = end( $ops );
 
 		return array(
