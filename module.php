@@ -36,7 +36,7 @@ function init(): void {
 	// This plugin provides the media_hub feature that Vault Support depends on.
 	$has_media_support = function_exists( '\TIMU\MediaSupport\init' );
 	$has_media_hub_feature = function_exists( '\TIMU\CoreSupport\has_timu_feature' ) && \TIMU\CoreSupport\has_timu_feature( 'media_hub' );
-	
+
 	if ( ! $has_media_support && ! $has_media_hub_feature ) {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\dependency_notice' );
 		return;
