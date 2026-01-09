@@ -96,7 +96,7 @@ Restore individual files or folders without rolling back the entire site.
 - Currently implemented via `rehydrate()` method
 - Individual attachment restore available in metabox
 - Journal-based rollback for single attachments
-- WP-CLI commands: `wp timu vault rehydrate`
+- WP-CLI commands: `wp timu vault rehydrate [--attachment-id=<id>]`
 
 **Related Code:** `class-timu-vault.php` - `rehydrate()`, `rollback_attachment()`
 
@@ -189,11 +189,11 @@ Keep multiple versions of backups for rollback flexibility.
 Command-line tools for power users to back up and restore media.
 
 **Technical Notes:**
-- ✅ `wp timu vault rehydrate` - Restore files from vault
-- ✅ `wp timu vault verify` - Verify integrity
-- ✅ `wp timu vault status` - Check vault status
-- ✅ `wp timu vault migrate` - Migration utilities
-- ✅ `wp timu vault erase-user-data` - GDPR compliance
+- ✅ `wp timu vault rehydrate [--attachment-id=<id>]` - Restore files from vault
+- ✅ `wp timu vault verify [--sample=<count>]` - Verify integrity
+- ✅ `wp timu vault status` - Check vault status and statistics
+- ✅ `wp timu vault migrate [--batch-size=<size>]` - Migrate attachments to vault in batches
+- ✅ `wp timu vault erase-user-data --user-id=<id>` - GDPR-compliant personal data erasure
 
 **Related Code:** `class-timu-vault.php` - `cli_*()` methods
 
@@ -382,7 +382,7 @@ Strip sensitive EXIF data (GPS, camera info) on upload.
 - Automatic on anonymization
 - GDPR compliance feature
 
-**Technical Requirements (Enhancement):**
+**Technical Requirements:**
 - User-selectable privacy levels
 - Preview EXIF before upload
 - Selective EXIF preservation (copyright, attribution)
@@ -571,5 +571,5 @@ To propose a new feature or enhancement:
 
 - [WordPress Media Handling](https://developer.wordpress.org/apis/media/)
 - [GDPR Personal Data Guidelines](https://wordpress.org/about/privacy/)
-- [Security Best Practices](https://developer.wordpress.org/apis/security/)
+- [WordPress Security White Paper](https://wordpress.org/about/security/)
 - [WP-CLI Commands](https://make.wordpress.org/cli/handbook/)
