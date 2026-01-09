@@ -571,5 +571,5 @@ To propose a new feature or enhancement:
 
 - [WordPress Media Handling](https://developer.wordpress.org/apis/media/)
 - [GDPR Personal Data Guidelines](https://wordpress.org/about/privacy/)
-- [WordPress Security White Paper](https://wordpress.org/about/security/)
+- [WordPress Developer Handbook - Security](https://developer.wordpress.org/apis/handbook/security/)
 - [WP-CLI Commands](https://make.wordpress.org/cli/handbook/)
