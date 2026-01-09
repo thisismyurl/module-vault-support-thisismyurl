@@ -63,6 +63,15 @@ function init(): void {
 		\TIMU\VaultSupport\TIMU_Vault::init();
 	}
 
+	// Load SEO features class.
+	if ( ! class_exists( '\\TIMU\\VaultSupport\\TIMU_Vault_SEO' ) && file_exists( TIMU_VAULT_PATH . 'includes/class-timu-vault-seo.php' ) ) {
+		require_once TIMU_VAULT_PATH . 'includes/class-timu-vault-seo.php';
+	}
+
+	if ( class_exists( '\\TIMU\\VaultSupport\\TIMU_Vault_SEO' ) ) {
+		\TIMU\VaultSupport\TIMU_Vault_SEO::init();
+	}
+
 	// Add admin menu.
 	add_action( 'admin_menu', __NAMESPACE__ . '\\register_admin_menu' );
 	add_action( 'network_admin_menu', __NAMESPACE__ . '\\register_network_admin_menu' );
