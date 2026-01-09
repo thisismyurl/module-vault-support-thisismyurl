@@ -5,21 +5,20 @@
  * Plugin Name:         Vault Support
  * Plugin URI:          https://thisismyurl.com/vault-support-thisismyurl/?source=vault-support-thisismyurl
  * Donate link:         https://thisismyurl.com/vault-support-thisismyurl/#register?source=vault-support-thisismyurl
- * Description:         Vault System for the thisismyurl.com Shared Code Suite. Secure original storage, encryption, journaling, rollback engine, and cloud offload for media files.
+ * * Description:         Vault System for the thisismyurl.com Shared Code Suite. Secure original storage, encryption, journaling, rollback engine, and cloud offload for media files.
  * Tags:                vault, backup, encryption, security, media, storage, journaling, rollback, cloud
- * Version:             1.2601.0819
+ * * Version:             1.2601.0819
  * Requires at least:   6.4
  * Requires PHP:        8.2
  * Requires Plugins:    media-support-thisismyurl
- * Update URI:          https://github.com/thisismyurl/vault-support-thisismyurl
+ * * Update URI:          https://github.com/thisismyurl/vault-support-thisismyurl
  * GitHub Plugin URI:   https://github.com/thisismyurl/vault-support-thisismyurl
  * Primary Branch:      main
  * Text Domain:         vault-support-thisismyurl
- * License:             GPL2
+ * * License:             GPL2
  * License URI:         https://www.gnu.org/licenses/gpl-2.0.html
- *
- * @package TIMU_Vault_Support
- */
+ * * @package TIMU_VAULT_SUPPORT
+ * */
 
 namespace TIMU\VaultSupport;
 
@@ -37,8 +36,7 @@ define( 'TIMU_VAULT_URL', plugin_dir_url( __FILE__ ) );
 define( 'TIMU_VAULT_BASENAME', plugin_basename( __FILE__ ) );
 
 /**
- * Note: The Vault class (class-timu-vault.php) is 127KB and copied from core-support-thisismyurl.
- * It will be loaded via require_once below. The namespace has been updated from TIMU\CoreSupport to TIMU\VaultSupport.
+ * Note: The Vault class is loaded from includes/class-timu-vault.php and aliased for legacy Core namespace compatibility.
  */
 
 /**
@@ -87,11 +85,14 @@ function init(): void {
 		)
 	);
 
-	// Load Vault class (127KB, 4041 lines).
-	require_once TIMU_VAULT_PATH . 'includes/class-timu-vault.php';
+	// Load Vault class from this plugin and initialize.
+	if ( ! class_exists( '\\TIMU\\VaultSupport\\TIMU_Vault' ) && file_exists( TIMU_VAULT_PATH . 'includes/class-timu-vault.php' ) ) {
+		require_once TIMU_VAULT_PATH . 'includes/class-timu-vault.php';
+	}
 
-	// Initialize Vault with VaultSupport namespace.
-	Vault::init();
+	if ( class_exists( '\\TIMU\\VaultSupport\\TIMU_Vault' ) ) {
+		\TIMU\VaultSupport\TIMU_Vault::init();
+	}
 
 	// Add admin menu.
 	add_action( 'admin_menu', __NAMESPACE__ . '\\register_admin_menu' );
