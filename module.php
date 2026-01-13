@@ -42,11 +42,11 @@ function init(): void {
 		'timu_register_module',
 		array(
 			'slug'         => 'vault-support-thisismyurl',
-			'name'         => __( 'Vault Support', 'vault-support-thisismyurl' ),
+			'name'         => __( 'Vault Support', 'module-vault-support-thisismyurl' ),
 			'type'         => 'spoke',
 			'suite'        => 'media',
 			'version'      => TIMU_VAULT_VERSION,
-			'description'  => __( 'Secure original storage with encryption, journaling, rollback engine, and cloud offload.', 'vault-support-thisismyurl' ),
+			'description'  => __( 'Secure original storage with encryption, journaling, rollback engine, and cloud offload.', 'module-vault-support-thisismyurl' ),
 			'capabilities' => array( 'vault', 'encryption', 'journaling', 'rollback', 'cloud_offload' ),
 			'path'         => TIMU_VAULT_PATH,
 			'url'          => TIMU_VAULT_URL,
@@ -82,9 +82,9 @@ function dependency_notice(): void {
 			echo wp_kses_post(
 				sprintf(
 					/* translators: 1: Plugin name, 2: Required plugin name with link */
-					__( '<strong>%1$s</strong> requires %2$s to be installed and activated.', 'vault-support-thisismyurl' ),
+					__( '<strong>%1$s</strong> requires %2$s to be installed and activated.', 'module-vault-support-thisismyurl' ),
 					'Vault Support',
-					'<a href="https://github.com/thisismyurl/media-support-thisismyurl">Media Support</a>'
+					'<a href="https://github.com/thisismyurl/module-media-support-thisismyurl">Media Support</a>'
 				)
 			);
 			?>
@@ -105,8 +105,8 @@ function register_admin_menu(): void {
 
 	add_submenu_page(
 		'timu-core-dashboard',
-		__( 'Vault Settings', 'vault-support-thisismyurl' ),
-		__( 'Vault', 'vault-support-thisismyurl' ),
+		__( 'Vault Settings', 'module-vault-support-thisismyurl' ),
+		__( 'Vault', 'module-vault-support-thisismyurl' ),
 		'manage_options',
 		'timu-vault-settings',
 		__NAMESPACE__ . '\\render_settings_page'
@@ -125,8 +125,8 @@ function register_network_admin_menu(): void {
 
 	add_submenu_page(
 		'timu-core-dashboard',
-		__( 'Vault Settings', 'vault-support-thisismyurl' ),
-		__( 'Vault', 'vault-support-thisismyurl' ),
+		__( 'Vault Settings', 'module-vault-support-thisismyurl' ),
+		__( 'Vault', 'module-vault-support-thisismyurl' ),
 		'manage_network_options',
 		'timu-vault-settings',
 		__NAMESPACE__ . '\\render_settings_page'
@@ -139,8 +139,8 @@ function register_network_admin_menu(): void {
  * @return void
  */
 function render_settings_page(): void {
-	echo '<div class="wrap"><h1>' . esc_html__( 'Vault Settings', 'vault-support-thisismyurl' ) . '</h1>';
-	echo '<p>' . esc_html__( 'Vault settings UI will be implemented here.', 'vault-support-thisismyurl' ) . '</p>';
+	echo '<div class="wrap"><h1>' . esc_html__( 'Vault Settings', 'module-vault-support-thisismyurl' ) . '</h1>';
+	echo '<p>' . esc_html__( 'Vault settings UI will be implemented here.', 'module-vault-support-thisismyurl' ) . '</p>';
 	echo '</div>';
 }
 
@@ -150,6 +150,6 @@ function render_settings_page(): void {
  * @return void
  */
 function load_textdomain(): void {
-	load_plugin_textdomain( 'vault-support-thisismyurl', false, dirname( TIMU_VAULT_BASENAME ) . '/languages' );
+	load_plugin_textdomain( 'module-vault-support-thisismyurl', false, dirname( TIMU_VAULT_BASENAME ) . '/languages' );
 }
 add_action( 'init', __NAMESPACE__ . '\\load_textdomain' );
